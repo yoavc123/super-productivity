@@ -25,7 +25,7 @@ import { toggleHideFromMenu } from '../../features/project/store/project.actions
 import { NavConfig, NavItem } from './magic-side-nav.model';
 import { PluginBridgeService } from '../../plugins/plugin-bridge.service';
 import { PluginService } from '../../plugins/plugin.service';
-import { lsGetBoolean, lsSetItem } from '../../util/ls-util';
+import { lsGetBoolean, lsGetJSON, lsSetItem, lsSetJSON } from '../../util/ls-util';
 import { MenuTreeService } from '../../features/menu-tree/menu-tree.service';
 import { Router } from '@angular/router';
 import {
@@ -58,6 +58,9 @@ export class MagicNavConfigService {
     lsGetBoolean(LS.IS_PROJECT_LIST_EXPANDED, true),
   );
   private readonly _isTagsExpanded = signal(lsGetBoolean(LS.IS_TAG_LIST_EXPANDED, true));
+  private readonly _treeSectionOrder = signal<Array<'projects' | 'tags'>>(
+    this._getInitialTreeSectionOrder(),
+  );
 
   // Data signals
   private readonly _mainWorkContext = toSignal(
@@ -154,73 +157,7 @@ export class MagicNavConfigService {
       // Separator
       { type: 'separator', id: 'sep-2' },
 
-      // Projects Section
-      {
-        type: 'tree',
-        id: 'projects',
-        label: T.MH.PROJECTS,
-        icon: 'expand_more',
-        treeKind: MenuTreeKind.PROJECT,
-        tree:
-          this._projectNavTree().length > 0
-            ? this._projectNavTree()
-            : this._visibleProjects().map((project) => ({
-                k: MenuTreeKind.PROJECT,
-                project,
-              })),
-        action: () => this._toggleProjectsExpanded(),
-        additionalButtons: [
-          {
-            id: 'project-visibility',
-            icon: 'visibility',
-            tooltip: T.F.PROJECT_FOLDER.TOOLTIP_VISIBILITY,
-            action: () => this._openProjectVisibilityMenu(),
-          },
-          {
-            id: 'add-project-folder',
-            icon: 'create_new_folder',
-            tooltip: T.F.PROJECT_FOLDER.TOOLTIP_CREATE,
-            action: () => this._openCreateProjectFolder(),
-          },
-          {
-            id: 'add-project',
-            icon: 'add',
-            tooltip: T.MH.CREATE_PROJECT,
-            action: () => this._openCreateProject(),
-          },
-        ],
-      },
-
-      // Tags Section
-      {
-        type: 'tree',
-        id: 'tags',
-        label: T.MH.TAGS,
-        icon: 'expand_more',
-        treeKind: MenuTreeKind.TAG,
-        tree:
-          this._tagNavTree().length > 0
-            ? this._tagNavTree()
-            : this._tags().map((tag) => ({
-                k: MenuTreeKind.TAG,
-                tag,
-              })),
-        action: () => this._toggleTagsExpanded(),
-        additionalButtons: [
-          {
-            id: 'add-tag-folder',
-            icon: 'create_new_folder',
-            tooltip: T.F.TAG_FOLDER.TOOLTIP_CREATE,
-            action: () => this._openCreateTagFolder(),
-          },
-          {
-            id: 'add-tag',
-            icon: 'add',
-            tooltip: T.MH.CREATE_TAG,
-            action: () => this._createNewTag(),
-          },
-        ],
-      },
+      ...this._getOrderedTreeSections(),
 
       // Separator
       { type: 'separator', id: 'sep-3', mtAuto: true },
@@ -344,7 +281,105 @@ export class MagicNavConfigService {
     }
   }
 
+  setTreeSectionOrder(order: Array<'projects' | 'tags'>): void {
+    if (!this._isValidTreeSectionOrder(order)) {
+      return;
+    }
+    this._treeSectionOrder.set(order);
+    lsSetJSON(LS.NAV_SIDEBAR_TREE_SECTION_ORDER, order);
+  }
+
   // Private helpers
+  private _getOrderedTreeSections(): NavItem[] {
+    const sections: Record<'projects' | 'tags', NavItem> = {
+      projects: {
+        type: 'tree',
+        id: 'projects',
+        label: T.MH.PROJECTS,
+        icon: 'expand_more',
+        treeKind: MenuTreeKind.PROJECT,
+        tree:
+          this._projectNavTree().length > 0
+            ? this._projectNavTree()
+            : this._visibleProjects().map((project) => ({
+                k: MenuTreeKind.PROJECT,
+                project,
+              })),
+        action: () => this._toggleProjectsExpanded(),
+        additionalButtons: [
+          {
+            id: 'project-visibility',
+            icon: 'visibility',
+            tooltip: T.F.PROJECT_FOLDER.TOOLTIP_VISIBILITY,
+            action: () => this._openProjectVisibilityMenu(),
+          },
+          {
+            id: 'add-project-folder',
+            icon: 'create_new_folder',
+            tooltip: T.F.PROJECT_FOLDER.TOOLTIP_CREATE,
+            action: () => this._openCreateProjectFolder(),
+          },
+          {
+            id: 'add-project',
+            icon: 'add',
+            tooltip: T.MH.CREATE_PROJECT,
+            action: () => this._openCreateProject(),
+          },
+        ],
+      },
+      tags: {
+        type: 'tree',
+        id: 'tags',
+        label: T.MH.TAGS,
+        icon: 'expand_more',
+        treeKind: MenuTreeKind.TAG,
+        tree:
+          this._tagNavTree().length > 0
+            ? this._tagNavTree()
+            : this._tags().map((tag) => ({
+                k: MenuTreeKind.TAG,
+                tag,
+              })),
+        action: () => this._toggleTagsExpanded(),
+        additionalButtons: [
+          {
+            id: 'add-tag-folder',
+            icon: 'create_new_folder',
+            tooltip: T.F.TAG_FOLDER.TOOLTIP_CREATE,
+            action: () => this._openCreateTagFolder(),
+          },
+          {
+            id: 'add-tag',
+            icon: 'add',
+            tooltip: T.MH.CREATE_TAG,
+            action: () => this._createNewTag(),
+          },
+        ],
+      },
+    };
+
+    return this._treeSectionOrder().map((sectionId) => sections[sectionId]);
+  }
+
+  private _getInitialTreeSectionOrder(): Array<'projects' | 'tags'> {
+    const fromStorage = lsGetJSON<Array<'projects' | 'tags'>>(
+      LS.NAV_SIDEBAR_TREE_SECTION_ORDER,
+      ['projects', 'tags'],
+    );
+    return this._isValidTreeSectionOrder(fromStorage) ? fromStorage : ['projects', 'tags'];
+  }
+
+  private _isValidTreeSectionOrder(
+    order: unknown,
+  ): order is Array<'projects' | 'tags'> {
+    return (
+      Array.isArray(order) &&
+      order.length === 2 &&
+      order.includes('projects') &&
+      order.includes('tags')
+    );
+  }
+
   private _buildWorkContextItems(): NavItem[] {
     const items: NavItem[] = [];
     const mainContext = this._mainWorkContext();

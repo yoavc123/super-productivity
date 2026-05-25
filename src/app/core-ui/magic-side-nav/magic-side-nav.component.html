@@ -74,6 +74,11 @@
       <ul
         class="nav-list"
         role="list"
+        cdkDropList
+        [cdkDropListData]="
+          config().items.filter((item) => item.type === 'tree' && (item.id === 'projects' || item.id === 'tags'))
+        "
+        (cdkDropListDropped)="onTreeSectionDrop($event)"
       >
         @for (item of config().items; track item.id) {
           @switch (item.type) {
@@ -87,6 +92,9 @@
               <li
                 class="nav-item has-children"
                 role="listitem"
+                cdkDrag
+                [cdkDragData]="item"
+                [cdkDragStartDelay]="dragDelayForTouch()"
               >
                 <nav-list-tree
                   [item]="item"
