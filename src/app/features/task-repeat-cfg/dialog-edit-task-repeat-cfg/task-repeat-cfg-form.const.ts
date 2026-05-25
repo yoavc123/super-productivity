@@ -95,62 +95,6 @@ export const TASK_REPEAT_CFG_ESSENTIAL_FORM_CFG: FormlyFieldConfig[] = [
           },
         ],
       },
-      {
-        fieldGroupClassName: 'weekdays',
-        resetOnHide: false,
-        hideExpression: (model: any) => model.repeatCycle !== 'WEEKLY',
-        fieldGroup: [
-          {
-            key: 'monday',
-            type: 'checkbox',
-            templateOptions: {
-              label: T.F.TASK_REPEAT.F.MONDAY,
-            },
-          },
-          {
-            key: 'tuesday',
-            type: 'checkbox',
-            templateOptions: {
-              label: T.F.TASK_REPEAT.F.TUESDAY,
-            },
-          },
-          {
-            key: 'wednesday',
-            type: 'checkbox',
-            templateOptions: {
-              label: T.F.TASK_REPEAT.F.WEDNESDAY,
-            },
-          },
-          {
-            key: 'thursday',
-            type: 'checkbox',
-            templateOptions: {
-              label: T.F.TASK_REPEAT.F.THURSDAY,
-            },
-          },
-          {
-            key: 'friday',
-            type: 'checkbox',
-            templateOptions: {
-              label: T.F.TASK_REPEAT.F.FRIDAY,
-            },
-          },
-          {
-            key: 'saturday',
-            type: 'checkbox',
-            templateOptions: {
-              label: T.F.TASK_REPEAT.F.SATURDAY,
-            },
-          },
-          {
-            key: 'sunday',
-            type: 'checkbox',
-            templateOptions: {
-              label: T.F.TASK_REPEAT.F.SUNDAY,
-            },
-          },
-        ],
-      },
     ],
   },
   // REPEAT CFG END

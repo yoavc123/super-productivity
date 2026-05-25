@@ -31,6 +31,58 @@
         [fields]="essentialFormFields()"
         [model]="repeatCfg()"
       ></formly-form>
+      @if (
+        repeatCfg().quickSetting === 'CUSTOM' &&
+        repeatCfg().repeatCycle === 'WEEKLY'
+      ) {
+        <div class="weekday-preset-buttons">
+          <button
+            (click)="applyWeekdayPreset('ALL_DAYS')"
+            aria-label="All days"
+            mat-stroked-button
+            type="button"
+          >
+            <mat-icon>wb_sunny</mat-icon>
+          </button>
+          <button
+            (click)="applyWeekdayPreset('WEEK_DAYS')"
+            aria-label="Week days"
+            mat-stroked-button
+            type="button"
+          >
+            <mat-icon>wb_twilight</mat-icon>
+          </button>
+          <button
+            (click)="applyWeekdayPreset('WORK_WEEK')"
+            aria-label="Work week"
+            mat-stroked-button
+            type="button"
+          >
+            <mat-icon>work_outline</mat-icon>
+          </button>
+          <button
+            (click)="applyWeekdayPreset('WEEKEND_DAYS')"
+            aria-label="Weekend"
+            mat-stroked-button
+            type="button"
+          >
+            <mat-icon>nightlight</mat-icon>
+          </button>
+        </div>
+        <div class="weekday-picker">
+          @for (day of weekdayButtons(); track day.key) {
+            <button
+              (click)="toggleWeekday(day.key)"
+              [class.is-selected]="repeatCfg()[day.key]"
+              [attr.aria-pressed]="!!repeatCfg()[day.key]"
+              mat-stroked-button
+              type="button"
+            >
+              {{ day.translationKey | translate }}
+            </button>
+          }
+        </div>
+      }
 
       <collapsible [title]="T.F.TASK_REPEAT.D_EDIT.ADVANCED_CFG | translate">
         <chip-list-input

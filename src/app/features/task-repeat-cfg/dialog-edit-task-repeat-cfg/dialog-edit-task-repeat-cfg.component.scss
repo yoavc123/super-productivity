@@ -59,14 +59,34 @@ mat-dialog-actions {
   margin-bottom: var(--s5);
 }
 
-:host::ng-deep .weekdays {
+.weekday-picker {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 var(--s);
+  gap: var(--s);
+  margin: calc(var(--s) * -1) 0 var(--s3);
+  padding: var(--s) 0;
 
-  > * {
+  button {
     width: auto;
+    min-width: 80px;
     max-width: 48%;
+    min-width: 0;
+
+    &.is-selected {
+      background: var(--c-primary);
+      color: var(--text-color-most-intense);
+      border-color: var(--c-primary);
+    }
+  }
+}
+
+.weekday-preset-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(56px, 1fr));
+  gap: var(--s);
+  margin: 0 0 var(--s);
+
+  button {
     min-width: 0;
   }
 }
