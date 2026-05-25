@@ -394,4 +394,53 @@ describe('DialogScheduleTaskComponent', () => {
       expect(component.selectedTime).toBe('14:45');
     });
   });
+
+  describe('calendar swipe navigation', () => {
+    it('should navigate to next month on left swipe', () => {
+      const startDate = new Date(2026, 0, 15);
+      component.calendar().activeDate = startDate;
+
+      component.onCalendarTouchStart({
+        changedTouches: [{ clientX: 200, clientY: 100 }],
+      } as unknown as TouchEvent);
+      component.onCalendarTouchEnd({
+        changedTouches: [{ clientX: 100, clientY: 100 }],
+      } as unknown as TouchEvent);
+
+      expect(component.calendar().activeDate.getFullYear()).toBe(2026);
+      expect(component.calendar().activeDate.getMonth()).toBe(1);
+      expect(component.calendar().activeDate.getDate()).toBe(1);
+    });
+
+    it('should navigate to previous month on right swipe', () => {
+      const startDate = new Date(2026, 1, 10);
+      component.calendar().activeDate = startDate;
+
+      component.onCalendarTouchStart({
+        changedTouches: [{ clientX: 100, clientY: 100 }],
+      } as unknown as TouchEvent);
+      component.onCalendarTouchEnd({
+        changedTouches: [{ clientX: 180, clientY: 110 }],
+      } as unknown as TouchEvent);
+
+      expect(component.calendar().activeDate.getFullYear()).toBe(2026);
+      expect(component.calendar().activeDate.getMonth()).toBe(0);
+      expect(component.calendar().activeDate.getDate()).toBe(1);
+    });
+
+    it('should not navigate month for mostly vertical swipe', () => {
+      const startDate = new Date(2026, 2, 20);
+      component.calendar().activeDate = startDate;
+
+      component.onCalendarTouchStart({
+        changedTouches: [{ clientX: 200, clientY: 100 }],
+      } as unknown as TouchEvent);
+      component.onCalendarTouchEnd({
+        changedTouches: [{ clientX: 170, clientY: 220 }],
+      } as unknown as TouchEvent);
+
+      expect(component.calendar().activeDate.getMonth()).toBe(2);
+      expect(component.calendar().activeDate.getDate()).toBe(20);
+    });
+  });
 });

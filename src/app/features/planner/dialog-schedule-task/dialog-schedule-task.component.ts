@@ -84,6 +84,7 @@ const DEFAULT_TIME = '09:00';
   animations: [expandFadeAnimation, fadeAnimation],
 })
 export class DialogScheduleTaskComponent implements AfterViewInit {
+  private static readonly SWIPE_THRESHOLD_PX = 50;
   data = inject<{
     task?: Task;
     targetDay?: string;
@@ -127,6 +128,8 @@ export class DialogScheduleTaskComponent implements AfterViewInit {
   // private _prevSelectedQuickAccessDate: Date | null = null;
   // private _prevQuickAccessAction: number | null = null;
   private _timeCheckVal: string | null = null;
+  private _touchStartX: number | null = null;
+  private _touchStartY: number | null = null;
 
   private _defaultTaskRemindCfgId = computed(
     () =>
@@ -247,6 +250,36 @@ export class DialogScheduleTaskComponent implements AfterViewInit {
     } else {
       this.isShowEnterMsg = false;
     }
+  }
+
+  onCalendarTouchStart(ev: TouchEvent): void {
+    const firstTouch = ev.changedTouches[0];
+    if (!firstTouch) {
+      return;
+    }
+    this._touchStartX = firstTouch.clientX;
+    this._touchStartY = firstTouch.clientY;
+  }
+
+  onCalendarTouchEnd(ev: TouchEvent): void {
+    const firstTouch = ev.changedTouches[0];
+    if (!firstTouch || this._touchStartX === null || this._touchStartY === null) {
+      return;
+    }
+
+    const deltaX = firstTouch.clientX - this._touchStartX;
+    const deltaY = firstTouch.clientY - this._touchStartY;
+    this._touchStartX = null;
+    this._touchStartY = null;
+
+    if (
+      Math.abs(deltaX) < DialogScheduleTaskComponent.SWIPE_THRESHOLD_PX ||
+      Math.abs(deltaX) < Math.abs(deltaY)
+    ) {
+      return;
+    }
+
+    this._navigateMonth(deltaX > 0 ? -1 : 1);
   }
 
   close(
@@ -484,5 +517,14 @@ export class DialogScheduleTaskComponent implements AfterViewInit {
     }
 
     this.submit();
+  }
+
+  private _navigateMonth(monthDelta: number): void {
+    const nextActiveDate = new Date(this.calendar().activeDate);
+    // Use day=1 to avoid date overflow issues (e.g. Jan 31 + 1 month).
+    nextActiveDate.setDate(1);
+    nextActiveDate.setMonth(nextActiveDate.getMonth() + monthDelta);
+    this.calendar().activeDate = nextActiveDate;
+    this._cd.markForCheck();
   }
 }
