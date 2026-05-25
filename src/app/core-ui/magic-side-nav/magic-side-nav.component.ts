@@ -32,10 +32,17 @@ import { ScheduleExternalDragService } from '../../features/schedule/schedule-we
 import { Log } from '../../core/log';
 import { TODAY_TAG } from '../../features/tag/tag.const';
 import { DragDropRegistry } from '@angular/cdk/drag-drop';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDropList,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
 import { WorkContextType } from '../../features/work-context/work-context.model';
 import { HISTORY_STATE } from '../../app.constants';
 import { SwipeDirective } from '../../ui/swipe-gesture/swipe.directive';
 import { DataInitStateService } from '../../core/data-init/data-init-state.service';
+import { dragDelayForTouch } from '../../util/input-intent';
 
 const COLLAPSED_WIDTH = 64;
 const MOBILE_NAV_WIDTH = 300;
@@ -52,6 +59,8 @@ const INITIAL_ENTER_ANIMATION_DURATION_MS = 425;
     MatMenuModule,
     NavMatMenuComponent,
     SwipeDirective,
+    CdkDropList,
+    CdkDrag,
   ],
   templateUrl: './magic-side-nav.component.html',
   styleUrl: './magic-side-nav.component.scss',
@@ -131,6 +140,7 @@ export class MagicSideNavComponent implements OnDestroy, AfterViewInit {
 
   // Commonly used derived state for template readability
   readonly showText = computed(() => this.isFullMode() || this.isMobile());
+  protected readonly dragDelayForTouch = dragDelayForTouch;
 
   // Keep stable references for event listeners to ensure proper cleanup
   private readonly _onDrag: (event: MouseEvent) => void = (event: MouseEvent) =>
@@ -401,6 +411,21 @@ export class MagicSideNavComponent implements OnDestroy, AfterViewInit {
     if (this.isMobile()) {
       this.showMobileMenuOverlay.set(false);
     }
+  }
+
+  onTreeSectionDrop(event: CdkDragDrop<NavItem[]>): void {
+    if (
+      event.previousContainer !== event.container ||
+      event.previousIndex === event.currentIndex
+    ) {
+      return;
+    }
+    const items = [...event.container.data];
+    moveItemInArray(items, event.previousIndex, event.currentIndex);
+    const order = items
+      .map((item) => item.id)
+      .filter((id): id is 'projects' | 'tags' => id === 'projects' || id === 'tags');
+    this._sideNavConfigService.setTreeSectionOrder(order);
   }
 
   // Resize functionality
