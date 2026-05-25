@@ -71,6 +71,16 @@ import { CollapsibleComponent } from '../../../ui/collapsible/collapsible.compon
   ],
 })
 export class DialogEditTaskRepeatCfgComponent {
+  private readonly _weekdayMeta: { key: keyof TaskRepeatCfg; translationKey: string }[] =
+    [
+      { key: 'sunday', translationKey: T.F.TASK_REPEAT.F.SUNDAY },
+      { key: 'monday', translationKey: T.F.TASK_REPEAT.F.MONDAY },
+      { key: 'tuesday', translationKey: T.F.TASK_REPEAT.F.TUESDAY },
+      { key: 'wednesday', translationKey: T.F.TASK_REPEAT.F.WEDNESDAY },
+      { key: 'thursday', translationKey: T.F.TASK_REPEAT.F.THURSDAY },
+      { key: 'friday', translationKey: T.F.TASK_REPEAT.F.FRIDAY },
+      { key: 'saturday', translationKey: T.F.TASK_REPEAT.F.SATURDAY },
+    ];
   private _globalConfigService = inject(GlobalConfigService);
   private _tagService = inject(TagService);
   private _taskRepeatCfgService = inject(TaskRepeatCfgService);
@@ -115,6 +125,17 @@ export class DialogEditTaskRepeatCfgComponent {
   formGroup2 = signal(new UntypedFormGroup({}));
   tagSuggestions = toSignal(this._tagService.tagsNoMyDayAndNoList$, { initialValue: [] });
   canRemoveInstance = signal<boolean>(false);
+  firstDayOfWeek = computed(() => {
+    const cfg = this._globalConfigService.localization()?.firstDayOfWeek;
+    return typeof cfg === 'number' && cfg >= 0 && cfg <= 6 ? cfg : 1;
+  });
+  weekdayButtons = computed(() => {
+    const firstDay = this.firstDayOfWeek();
+    return [
+      ...this._weekdayMeta.slice(firstDay),
+      ...this._weekdayMeta.slice(0, firstDay),
+    ];
+  });
   skipInstanceButtonText = computed(() => {
     if (!this._data.targetDate) {
       return this._translateService.instant(T.F.TASK_REPEAT.F.SKIP_INSTANCE);
@@ -154,6 +175,64 @@ export class DialogEditTaskRepeatCfgComponent {
       }
       this._checkCanRemoveInstance();
     });
+  }
+
+  toggleWeekday(dayKey: keyof TaskRepeatCfg): void {
+    this.repeatCfg.update((cfg) => ({
+      ...cfg,
+      [dayKey]: !cfg[dayKey],
+    }));
+  }
+
+  applyWeekdayPreset(
+    preset: 'ALL_DAYS' | 'WEEK_DAYS' | 'WORK_WEEK' | 'WEEKEND_DAYS',
+  ): void {
+    const baseDays: Record<string, boolean> = {
+      sunday: false,
+      monday: false,
+      tuesday: false,
+      wednesday: false,
+      thursday: false,
+      friday: false,
+      saturday: false,
+    };
+
+    const presetDays: Record<string, boolean> = {
+      ...baseDays,
+      ...(preset === 'ALL_DAYS' && {
+        sunday: true,
+        monday: true,
+        tuesday: true,
+        wednesday: true,
+        thursday: true,
+        friday: true,
+        saturday: true,
+      }),
+      ...(preset === 'WEEK_DAYS' && {
+        monday: true,
+        tuesday: true,
+        wednesday: true,
+        thursday: true,
+        friday: true,
+      }),
+      ...(preset === 'WORK_WEEK' && {
+        monday: true,
+        tuesday: true,
+        wednesday: true,
+        thursday: true,
+        friday: true,
+        saturday: true,
+      }),
+      ...(preset === 'WEEKEND_DAYS' && {
+        saturday: true,
+        sunday: true,
+      }),
+    };
+
+    this.repeatCfg.update((cfg) => ({
+      ...cfg,
+      ...presetDays,
+    }));
   }
 
   private _initializeRepeatCfg(): Omit<TaskRepeatCfgCopy, 'id'> | TaskRepeatCfg {
