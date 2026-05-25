@@ -34,6 +34,8 @@
   @if (isConfigReady()) {
     <mat-calendar
       (keydown)="onKeyDownOnCalendar($event)"
+      (touchstart)="onCalendarTouchStart($event)"
+      (touchend)="onCalendarTouchEnd($event)"
       [selected]="selectedDate"
       [minDate]="minDate"
       (selectedChange)="dateSelected($event)"
