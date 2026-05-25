@@ -110,6 +110,10 @@ export class DialogDeadlineComponent implements AfterViewInit {
   isShowEnterMsg = false;
   private _timeCheckVal: string | null = null;
 
+  private _touchStartX: number | null = null;
+  private _touchStartY: number | null = null;
+  private readonly _swipeThresholdPx = 40;
+
   ngAfterViewInit(): void {
     if (this.task.deadlineWithTime) {
       this.hasExistingDeadline = true;
@@ -150,6 +154,42 @@ export class DialogDeadlineComponent implements AfterViewInit {
       ? '.mat-calendar-body-selected'
       : '.mat-calendar-body-today';
     (host.querySelector(selector) as HTMLElement)?.parentElement?.focus();
+  }
+
+  onCalendarTouchStart(ev: TouchEvent): void {
+    const touch = ev.changedTouches?.[0];
+    if (!touch) {
+      return;
+    }
+    this._touchStartX = touch.clientX;
+    this._touchStartY = touch.clientY;
+  }
+
+  onCalendarTouchEnd(ev: TouchEvent): void {
+    const touch = ev.changedTouches?.[0];
+    if (!touch || this._touchStartX === null || this._touchStartY === null) {
+      return;
+    }
+
+    const deltaX = touch.clientX - this._touchStartX;
+    const deltaY = touch.clientY - this._touchStartY;
+
+    this._touchStartX = null;
+    this._touchStartY = null;
+
+    if (
+      Math.abs(deltaX) < this._swipeThresholdPx ||
+      Math.abs(deltaX) < Math.abs(deltaY)
+    ) {
+      return;
+    }
+
+    const monthDelta = deltaX < 0 ? 1 : -1;
+    const nextActiveDate = new Date(this.calendar().activeDate);
+    nextActiveDate.setDate(1);
+    nextActiveDate.setMonth(nextActiveDate.getMonth() + monthDelta);
+    this.calendar().activeDate = nextActiveDate;
+    this._cd.markForCheck();
   }
 
   onKeyDownOnCalendar(ev: KeyboardEvent): void {
